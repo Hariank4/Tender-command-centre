@@ -1,0 +1,4 @@
+venv/
+.env
+tenders.db
+__pycache__/
