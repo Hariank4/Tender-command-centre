@@ -58,5 +58,5 @@ frontend/     — dashboard web interface
 .env          — API keys (not committed to Git)
 
 ## Built by
-B.Tech CSE (Generative AI) Intern
+Hariank Juneja - Intern
 MeraPath Education Limited
