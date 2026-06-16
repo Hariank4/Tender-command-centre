@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeraPath — Tender Command Centre</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  :root {
+    --navy: #0D1B40; --blue: #1565C0; --teal: #0097A7;
+    --gold: #F9A825; --red: #C62828; --green: #1B5E20;
+    --orange: #E65100; --white: #FFFFFF; --surface: #F4F6FA;
+    --border: #D1D5E8; --text1: #0D1B40; --text2: #3D4A7A; --text3: #6B7AAB;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--surface); color: var(--text1); display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 220px; background: var(--navy); display: flex; flex-direction: column; flex-shrink: 0; }
+  .logo { padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .logo-pill { background: var(--teal); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 2px; padding: 4px 10px; border-radius: 4px; display: inline-block; }
+  .logo-sub { color: rgba(255,255,255,0.4); font-size: 9px; margin-top: 5px; letter-spacing: 1px; }
+  .nav-section { padding: 14px 14px 4px; font-size: 8.5px; font-weight: 600; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 14px; color: rgba(255,255,255,0.6); font-size: 12.5px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+  .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.08); color: #fff; border-left-color: var(--teal); }
+  .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+  .sidebar-footer { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 10px; color: rgba(255,255,255,0.35); margin-top: auto; }
+  .live-dot { display: inline-block; width: 6px; height: 6px; background: #81C784; border-radius: 50%; margin-right: 5px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: #fff; border-bottom: 1px solid var(--border); padding: 0 20px; height: 52px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .topbar-title { font-size: 14px; font-weight: 600; }
+  .topbar-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .scan-btn { background: var(--navy); color: #fff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .scan-btn:hover { background: var(--blue); }
+  .scan-btn.scanning { background: var(--teal); }
+
+  /* CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: box-shadow 0.15s; }
+  .stat-card:hover { box-shadow: 0 2px 8px rgba(13,27,64,0.1); }
+  .stat-label { font-size: 9.5px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--text1); }
+  .stat-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr 360px; gap: 14px; }
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .panel-title { font-size: 13px; font-weight: 700; }
+  .panel-count { background: var(--surface); color: var(--text2); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .panel-right { margin-left: auto; }
+
+  /* FILTERS */
+  .filter-bar { padding: 8px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .chip { padding: 3px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 600; border: 1px solid var(--border); background: #fff; color: var(--text2); cursor: pointer; transition: all 0.15s; }
+  .chip:hover { border-color: var(--navy); color: var(--navy); }
+  .chip.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .search { margin-left: auto; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; outline: none; width: 160px; }
+  .search:focus { border-color: var(--teal); }
+
+  /* TENDER CARD */
+  .tender-list { max-height: 480px; overflow-y: auto; }
+  .tender-card { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .tender-card:hover { background: var(--surface); }
+  .tender-card.active { background: #E3F2FD; border-left: 3px solid var(--blue); }
+  .tc-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .priority-badge { padding: 2px 7px; border-radius: 4px; font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; flex-shrink: 0; margin-top: 2px; }
+  .p-critical { background: var(--red); color: #fff; }
+  .p-high { background: var(--orange); color: #fff; }
+  .p-medium { background: var(--gold); color: var(--navy); }
+  .p-low { background: var(--surface); color: var(--text2); }
+  .tc-title { font-size: 12.5px; font-weight: 600; line-height: 1.4; flex: 1; }
+  .tc-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--text3); margin-top: 5px; }
+  .badge { padding: 1px 7px; border-radius: 4px; font-size: 9.5px; font-weight: 600; }
+  .badge-dept { background: #E3F2FD; color: var(--blue); }
+  .badge-cat  { background: #FFFDE7; color: #795548; }
+  .badge-met  { background: #E8F5E9; color: var(--green); }
+  .badge-partial { background: #FFF3E0; color: var(--orange); }
+  .badge-no   { background: #FFEBEE; color: var(--red); }
+  .tc-value { font-weight: 700; color: var(--teal); font-size: 12px; }
+  .tc-deadline { font-size: 10px; color: var(--text3); }
+
+  /* DETAIL PANEL */
+  .detail-content { padding: 14px 16px; overflow-y: auto; max-height: 560px; }
+  .detail-empty { padding: 40px 20px; text-align: center; color: var(--text3); }
+  .detail-empty .icon { font-size: 36px; margin-bottom: 10px; }
+  .detail-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; line-height: 1.4; }
+  .section-label { font-size: 8.5px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin: 12px 0 6px; }
+  .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .kv { background: var(--surface); border-radius: 6px; padding: 7px 9px; }
+  .kv-k { font-size: 8.5px; color: var(--text3); text-transform: uppercase; }
+  .kv-v { font-size: 12px; font-weight: 600; margin-top: 2px; color: var(--text1); }
+  .kv-v.money { color: var(--teal); }
+  .summary-box { background: var(--surface); padding: 9px 11px; border-radius: 8px; font-size: 11px; color: var(--text2); line-height: 1.6; border-left: 2px solid var(--teal); margin-bottom: 10px; }
+  .elig-block { border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .elig-met  { background: #E8F5E9; border: 1px solid #81C784; }
+  .elig-part { background: #FFF3E0; border: 1px solid #FFD54F; }
+  .elig-no   { background: #FFEBEE; border: 1px solid #EF9A9A; }
+  .elig-title { font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+  .elig-met .elig-title  { color: var(--green); }
+  .elig-part .elig-title { color: var(--orange); }
+  .elig-no .elig-title   { color: var(--red); }
+  .elig-item { font-size: 10.5px; display: flex; gap: 5px; margin-top: 3px; }
+  .ai-box { background: var(--navy); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .ai-label { font-size: 8.5px; font-weight: 700; color: var(--teal); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .ai-text { font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.6; }
+  .proposal-item { display: flex; gap: 7px; padding: 5px 8px; background: var(--surface); border-radius: 5px; margin-bottom: 4px; font-size: 11px; color: var(--text2); align-items: flex-start; }
+  .proposal-num { width: 16px; height: 16px; background: var(--navy); color: #fff; border-radius: 50%; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .action-row { display: flex; gap: 6px; margin-top: 12px; }
+  .action-btn { flex: 1; padding: 7px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text1); transition: all 0.15s; text-align: center; }
+  .action-btn:hover { background: var(--surface); }
+  .action-btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .action-btn.teal { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  /* TOAST */
+  .toast-wrap { position: fixed; bottom: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 6px; }
+  .toast { background: var(--navy); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 11.5px; max-width: 280px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: flex; gap: 8px; border-left: 3px solid var(--teal); animation: toastIn 0.3s ease; }
+  .toast.urgent { border-left-color: var(--red); }
+  @keyframes toastIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+
+  /* STATUS DROPDOWN */
+  .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; color: var(--text1); background: var(--surface); cursor: pointer; width: 100%; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-pill">MERAPATH</div>
+    <div class="logo-sub">TENDER COMMAND CENTRE</div>
+  </div>
+  <nav>
+    <div class="nav-section">Intelligence</div>
+    <div class="nav-item active" onclick="filterAll()">📊 Dashboard</div>
+    <div class="nav-item" onclick="filterAll()">📋 All Tenders <span class="nav-badge" id="nb-total">0</span></div>
+    <div class="nav-item" onclick="filterByPriority('high')">🔥 High Priority <span class="nav-badge" id="nb-high">0</span></div>
+    <div class="nav-section">Pipeline</div>
+    <div class="nav-item" onclick="filterByStatus('reviewing')">🔍 Under Review</div>
+    <div class="nav-item" onclick="filterByStatus('bidding')">✍️ Bidding Active</div>
+    <div class="nav-item" onclick="filterByStatus('submitted')">📬 Submitted</div>
+    <div class="nav-section">Tools</div>
+    <div class="nav-item" onclick="showToast('🤖','Select a tender first, then click Build Proposal','')">🤖 AI Proposal Builder</div>
+    <div class="nav-item" onclick="showToast('📈','Analytics coming soon','')">📈 Analytics</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div><span class="live-dot"></span>AI Scanner Active</div>
+    <div style="margin-top:3px">Last scan: Today 6:00 AM</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Tender Intelligence Dashboard</div>
+    <div class="topbar-right">
+      <span style="font-size:11px;color:var(--text3)" id="topbar-sub">Loading...</span>
+      <button class="scan-btn" id="scanBtn" onclick="triggerScan()">⚡ Run AI Scan</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card" onclick="filterAll()">
+        <div class="stat-label">Total Active</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-sub">Across all portals</div>
+      </div>
+      <div class="stat-card" onclick="filterByPriority('high')">
+        <div class="stat-label">High Priority</div>
+        <div class="stat-value" id="stat-high" style="color:var(--orange)">—</div>
+        <div class="stat-sub">Needs attention</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pipeline Value</div>
+        <div class="stat-value" id="stat-value" style="color:var(--teal);font-size:18px">—</div>
+        <div class="stat-sub">Total opportunity</div>
+      </div>
+      <div class="stat-card" onclick="filterByEligibility('met')">
+        <div class="stat-label">Eligible</div>
+        <div class="stat-value" id="stat-eligible" style="color:var(--green)">—</div>
+        <div class="stat-sub">MeraPath qualifies</div>
+      </div>
+      <div class="stat-card" onclick="filterByStatus('new')">
+        <div class="stat-label">New Today</div>
+        <div class="stat-value" id="stat-new">—</div>
+        <div class="stat-sub">Awaiting review</div>
+      </div>
+    </div>
+
+    <!-- MAIN TWO COL -->
+    <div class="two-col">
+      <!-- LEFT: TENDER LIST -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Active Tenders</span>
+          <span class="panel-count" id="list-count">Loading...</span>
+          <div class="panel-right">
+            <select style="font-size:11px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text2)" onchange="sortTenders(this.value)">
+              <option value="priority">Sort: Priority</option>
+              <option value="deadline">Sort: Deadline</option>
+              <option value="value">Sort: Value</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="chip active" onclick="filterAll(this)">All</div>
+          <div class="chip" onclick="filterByPriority('high',this)">🔥 High</div>
+          <div class="chip" onclick="filterByEligibility('met',this)">✅ Eligible</div>
+          <div class="chip" onclick="filterByEligibility('partial',this)">⚠️ Partial</div>
+          <input class="search" type="text" placeholder="🔍 Search..." oninput="searchTenders(this.value)">
+        </div>
+        <div class="tender-list" id="tenderList">
+          <div style="padding:30px;text-align:center;color:var(--text3)">Loading tenders...</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: DETAIL -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">AI Analysis</span>
+          <span class="panel-count" id="detail-badge">Select a tender</span>
+        </div>
+        <div id="detailPanel">
+          <div class="detail-empty">
+            <div class="icon">🤖</div>
+            <div style="font-weight:600;color:var(--text2);margin-bottom:6px">No tender selected</div>
+            <div style="font-size:11px">Click any tender to see AI analysis, eligibility check, and proposal structure</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const API = 'http://localhost:8000';
+let allTenders = [];
+let activeTenderId = null;
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────
+async function loadStats() {
+  const res = await fetch(`${API}/stats`);
+  const d   = await res.json();
+  document.getElementById('stat-total').textContent   = d.total;
+  document.getElementById('stat-high').textContent    = d.high;
+  document.getElementById('stat-value').textContent   = d.total_value;
+  document.getElementById('stat-eligible').textContent = d.eligible;
+  document.getElementById('stat-new').textContent     = d.pipeline.new;
+  document.getElementById('nb-total').textContent     = d.total;
+  document.getElementById('nb-high').textContent      = d.high;
+  document.getElementById('topbar-sub').textContent   = `${d.total} tenders · ₹${d.total_value} pipeline`;
+}
+
+async function loadTenders() {
+  const res = await fetch(`${API}/tenders`);
+  const d   = await res.json();
+  allTenders = d.tenders;
+  renderList(allTenders);
+}
+
+function init() {
+  loadStats();
+  loadTenders();
+  connectWebSocket();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderList(tenders) {
+  document.getElementById('list-count').textContent = tenders.length + ' found';
+  const list = document.getElementById('tenderList');
+  if (!tenders.length) {
+    list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3)">No tenders match this filter</div>';
+    return;
+  }
+  list.innerHTML = tenders.map(t => {
+    const pc = {critical:'p-critical',high:'p-high',medium:'p-medium',low:'p-low'}[t.priority] || 'p-low';
+    const ec = {met:'badge-met',partial:'badge-partial',no:'badge-no'}[t.eligibility_status] || 'badge-partial';
+    const eLabel = {met:'✅ Eligible',partial:'⚠️ Partial',no:'❌ Not eligible'}[t.eligibility_status] || '⚠️ Partial';
+    return `
+    <div class="tender-card ${activeTenderId===t.id?'active':''}" onclick="selectTender(${t.id})">
+      <div class="tc-top">
+        <span class="priority-badge ${pc}">${(t.priority||'').toUpperCase()}</span>
+        <div class="tc-title">${t.title}</div>
+      </div>
+      <div class="tc-meta">
+        <span class="badge badge-dept">🏛 ${t.department||'—'}</span>
+        <span class="badge badge-cat">📁 ${t.category||'—'}</span>
+        <span class="badge ${ec}">${eLabel}</span>
+      </div>
+      <div class="tc-meta" style="margin-top:4px">
+        <span class="tc-value">💰 ${t.value||'—'}</span>
+        <span class="tc-deadline">⏰ ${t.deadline||'—'}</span>
+        <span style="font-size:10px;color:var(--text3)">📋 ${t.portal||'—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectTender(id) {
+  activeTenderId = id;
+  const t = allTenders.find(x => x.id === id);
+  if (!t) return;
+  renderList(allTenders.filter(x => currentFilter(x)));
+  renderDetail(t);
+}
+
+function renderDetail(t) {
+  document.getElementById('detail-badge').textContent = (t.priority||'').toUpperCase() + ' · ' + (t.category||'');
+
+  // Parse eligibility checks
+  let checks = [];
+  try { checks = typeof t.eligibility_checks === 'string' ? eval(t.eligibility_checks) : t.eligibility_checks || []; } catch(e) {}
+
+  // Parse proposal structure
+  let proposal = [];
+  try { proposal = typeof t.proposal_structure === 'string' ? eval(t.proposal_structure) : t.proposal_structure || []; } catch(e) {}
+
+  const ec = {met:'elig-met',partial:'elig-part',no:'elig-no'}[t.eligibility_status] || 'elig-part';
+  const eTitle = {met:'✅ All Criteria Met',partial:'⚠️ Partial Match — Review Gaps',no:'❌ Does Not Meet Criteria'}[t.eligibility_status] || '⚠️ Partial';
+
+  document.getElementById('detailPanel').innerHTML = `
+    <div class="detail-content">
+      <div class="detail-title">${t.title}</div>
+
+      <div class="section-label">📊 Tender Details</div>
+      <div class="kv-grid">
+        <div class="kv"><div class="kv-k">Value</div><div class="kv-v money">${t.value||'—'}</div></div>
+        <div class="kv"><div class="kv-k">Deadline</div><div class="kv-v">${t.deadline||'—'}</div></div>
+        <div class="kv"><div class="kv-k">Department</div><div class="kv-v">${t.department||'—'}</div></div>
+        <div class="kv"><div class="kv-k">Portal</div><div class="kv-v">${t.portal||'—'}</div></div>
+      </div>
+
+      <div class="section-label">📝 AI Summary</div>
+      <div class="summary-box">${t.summary||'No summary available'}</div>
+
+      <div class="section-label">✅ Eligibility Check</div>
+      <div class="elig-block ${ec}">
+        <div class="elig-title">${eTitle}</div>
+        ${checks.map(c => `
+          <div class="elig-item">
+            <span>${c.pass ? '✅' : '❌'}</span>
+            <span style="font-size:10.5px;color:${c.pass?'#1B5E20':'#C62828'}">${c.criteria} — ${c.note||''}</span>
+          </div>`).join('') || '<div style="font-size:11px;color:#666">No detailed checks available</div>'}
+      </div>
+
+      <div class="section-label">📄 Suggested Proposal Structure</div>
+      ${proposal.map((p,i) => `
+        <div class="proposal-item">
+          <div class="proposal-num">${i+1}</div>
+          <div>${p}</div>
+        </div>`).join('') || '<div style="font-size:11px;color:var(--text3)">No structure available</div>'}
+
+      <div class="section-label">🤖 AI Recommendation</div>
+      <div class="ai-box">
+        <div class="ai-label">Groq AI · Llama 3.1</div>
+        <div class="ai-text">${t.ai_recommendation||'No recommendation available'}</div>
+      </div>
+
+      <div class="section-label">⚙️ Move Pipeline Stage</div>
+      <select class="status-select" onchange="updateStatus(${t.id}, this.value)">
+        <option value="new"       ${t.status==='new'?'selected':''}>🆕 New</option>
+        <option value="reviewing" ${t.status==='reviewing'?'selected':''}>🔍 Reviewing</option>
+        <option value="bidding"   ${t.status==='bidding'?'selected':''}>✍️ Bidding</option>
+        <option value="submitted" ${t.status==='submitted'?'selected':''}>📬 Submitted</option>
+        <option value="won"       ${t.status==='won'?'selected':''}>🏆 Won</option>
+        <option value="lost"      ${t.status==='lost'?'selected':''}>❌ Lost</option>
+      </select>
+
+      <div class="action-row">
+        <div class="action-btn primary" onclick="showToast('🤖','AI Proposal Builder','Opening proposal template for this tender...')">🤖 Build Proposal</div>
+        <div class="action-btn teal" onclick="showToast('📧','Alert sent!','Team notified about this tender')">📧 Alert Team</div>
+      </div>
+    </div>`;
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────
+let _filter = () => true;
+function currentFilter(t) { return _filter(t); }
+
+function filterAll(el) {
+  _filter = () => true;
+  setChip(el);
+  renderList(allTenders);
+}
+function filterByPriority(p, el) {
+  _filter = t => t.priority === p || t.priority === 'critical';
+  setChip(el);
+  renderList(allTenders.filter(_filter));
+}
+function filterByEligibility(e, el) {
+  _filter = t => t.eligibility_status === e;
+  setChip(el);
+  renderList(allTenders.filter(_filter));
+}
+function filterByStatus(s) {
+  _filter = t => t.status === s;
+  renderList(allTenders.filter(_filter));
+}
+function searchTenders(q) {
+  const ql = q.toLowerCase();
+  renderList(allTenders.filter(t =>
+    (t.title||'').toLowerCase().includes(ql) ||
+    (t.department||'').toLowerCase().includes(ql) ||
+    (t.category||'').toLowerCase().includes(ql)
+  ));
+}
+function sortTenders(by) {
+  const sorted = [...allTenders];
+  if (by === 'priority') {
+    const o = {critical:0,high:1,medium:2,low:3};
+    sorted.sort((a,b) => (o[a.priority]||4)-(o[b.priority]||4));
+  } else if (by === 'value') {
+    sorted.sort((a,b) => parseFloat(b.value)||0 - parseFloat(a.value)||0);
+  }
+  renderList(sorted);
+}
+function setChip(el) {
+  if (!el) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────
+async function updateStatus(id, status) {
+  await fetch(`${API}/tenders/${id}/status`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  });
+  // Update local data
+  const t = allTenders.find(x => x.id === id);
+  if (t) t.status = status;
+  showToast('✅', 'Status updated', `Moved to: ${status}`);
+  loadStats();
+}
+
+async function triggerScan() {
+  const btn = document.getElementById('scanBtn');
+  btn.textContent = '⟳ Scanning...';
+  btn.classList.add('scanning');
+  await fetch(`${API}/scan`, {method:'POST'});
+  showToast('⚡','Scan started','AI is analysing portals — results in ~30 seconds');
+  setTimeout(() => {
+    btn.textContent = '⚡ Run AI Scan';
+    btn.classList.remove('scanning');
+    loadTenders();
+    loadStats();
+    showToast('✅','Scan complete','Dashboard refreshed with latest tenders');
+  }, 8000);
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────
+function connectWebSocket() {
+  try {
+    const ws = new WebSocket('ws://localhost:8000/ws/alerts');
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'scan_complete') {
+        showToast('✅', 'Scan complete', msg.message);
+        loadTenders(); loadStats();
+      }
+    };
+    ws.onerror = () => {};
+  } catch(e) {}
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function showToast(icon, title, body) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span style="font-size:15px">${icon}</span><div><div style="font-weight:600">${title}</div><div style="opacity:0.75;margin-top:2px;font-size:10.5px">${body}</div></div>`;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 4000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
